@@ -1,0 +1,85 @@
+clearvars
+close all
+Phantom = phantom('Modified Shepp-Logan',500);
+stepsize = 15; %scan angle step size
+
+%filter: 'Ram-Lak'[1], 'Shepp-Logan'[2], 'Cosine'[3]
+%        'Hamming'[4], 'Hann'[5] 
+%        'None'[0] for no filtering
+filter = 0;
+
+%noise: 'poisson'[1], 'gaussian'[2]
+%       'salt & pepper'[3], 'speckle'[4]
+%       'no noise'[0] 
+noise = 0;  
+
+imshow(Phantom)
+figure
+sinogram(Phantom,stepsize,noise);
+figure
+inverseTransformation(Phantom,stepsize,filter,noise);
+
+function R = sinogram(I,stepsize,noise) 
+%function for creating the sinogram
+
+I = imresize(I,[100 100]);
+iptsetpref('ImshowAxesVisible','on')
+theta = 0:stepsize:180;
+[R,xp] = radon(I,theta);
+
+switch noise
+    case 0
+        
+    case 1
+        R = 1e12.*imnoise(R./1e12, 'poisson');
+    case 2
+        R = 1e2.*imnoise(R./1e2, 'gaussian');
+    case 3
+        R = imnoise(R, 'salt & pepper');
+    case 4
+        R = imnoise(R, 'speckle');
+end
+
+imshow(R,[],'Xdata',theta,'Ydata',xp,'InitialMagnification','fit')
+xlabel('\theta (degrees)')
+ylabel('x''')
+colormap(gray), colorbar
+
+end
+
+function inverseTransformation(I,stepsize,filter,noise)
+%function for the inverse radon transformation
+
+iptsetpref('ImshowAxesVisible','on')
+theta = 0:stepsize:180;
+R = radon(I,theta);
+
+switch noise
+    case 0
+        
+    case 1
+        R = 1e12.*imnoise(R./1e12, 'poisson');
+    case 2
+        R = 1e2.*imnoise(R./1e2, 'gaussian');
+    case 3
+        R = imnoise(R, 'salt & pepper');
+    case 4
+        R = imnoise(R, 'speckle');
+end
+
+switch filter
+    case 0
+        imshow(iradon(R,theta,'None'),[])
+    case 1
+        imshow(iradon(R,theta,'Ram-Lak'),[])
+    case 2
+        imshow(iradon(R,theta,'Shepp-Logan'),[])
+    case 3
+        imshow(iradon(R,theta,'Cosine'),[])
+    case 4
+        imshow(iradon(R,theta,'Hamming'),[])
+    case 5
+        imshow(iradon(R,theta,'Hann'),[])
+end
+
+end
